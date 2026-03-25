@@ -1,8 +1,11 @@
-// ============ 常量 ============
-const PRICE = 5;
-const ADMIN_PWD = '888888'; // 默认管理员密码
+// ============ 食堂订餐系统 - 正式版 ============
+// 版本: 1.0.0
+// 发布日期: 2026-03-25
 
-// ============ 数据存储（兼容 localStorage 不可用的情况）===========
+const PRICE = 5;
+const ADMIN_PWD = '888888'; // 管理员密码，建议首次登录后修改
+
+// ============ 数据存储 ============
 const memoryStorage = {};
 let storageAvailable = false;
 
@@ -32,7 +35,6 @@ const DB = {
                 memoryStorage['co_' + key] = JSON.parse(JSON.stringify(val));
             }
         } catch(e) {
-            // 存储失败时显示提示
             showToast('存储失败，请检查浏览器设置');
         }
     },
@@ -40,6 +42,14 @@ const DB = {
     getOrders: () => DB.get('orders') || {},
     saveMenus: (v) => DB.set('menus', v),
     saveOrders: (v) => DB.set('orders', v),
+    // 清空所有数据（管理员功能）
+    clearAll: () => {
+        if (storageAvailable) {
+            localStorage.removeItem('co_menus');
+            localStorage.removeItem('co_orders');
+        }
+        for (let k in memoryStorage) delete memoryStorage[k];
+    }
 };
 
 // ============ 状态 ============
@@ -379,6 +389,17 @@ function renderAdminPage() {
     renderTodayStats();
     renderMonthly();
     renderSettleMonths();
+}
+
+// 清空所有数据
+function clearAllData() {
+    showConfirm('清空所有数据', '确定要清空所有菜单和订餐记录吗？此操作不可恢复！', () => {
+        DB.clearAll();
+        showToast('✅ 所有数据已清空');
+        renderMenuHistory();
+        renderTodayStats();
+        renderMonthly();
+    });
 }
 
 function publishMenu() {
