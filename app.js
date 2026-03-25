@@ -327,6 +327,19 @@ function setupAdmin() {
     document.getElementById('btn-publish-menu').addEventListener('click', publishMenu);
     document.getElementById('btn-export-today').addEventListener('click', exportToday);
     document.getElementById('btn-export-monthly').addEventListener('click', exportMonthly);
+
+    // 编辑菜单弹窗事件
+    document.getElementById('edit-menu-cancel').addEventListener('click', () => {
+        document.getElementById('edit-menu-modal').style.display = 'none';
+        editingDate = null;
+    });
+    document.getElementById('edit-menu-save').addEventListener('click', saveEditMenu);
+    document.getElementById('edit-menu-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('edit-menu-modal')) {
+            document.getElementById('edit-menu-modal').style.display = 'none';
+            editingDate = null;
+        }
+    });
 }
 
 function renderAdminPage() {
@@ -359,7 +372,7 @@ function publishMenu() {
 function renderMenuHistory() {
     const menus = DB.getMenus();
     const list = document.getElementById('menu-history-list');
-    const dates = Object.keys(menus).sort().reverse().slice(0, 10);
+    const dates = Object.keys(menus).sort().reverse();
 
     if (dates.length === 0) {
         list.innerHTML = '<div class="empty-tip">暂无历史菜单</div>';
@@ -369,12 +382,60 @@ function renderMenuHistory() {
     list.innerHTML = dates.map(date => {
         const menu = menus[date];
         return `
-            <div class="menu-history-item">
+            <div class="menu-history-item" data-date="${date}">
                 <div class="menu-history-date">${formatDate(date)} ${date === today() ? '<span style="color:var(--primary);font-size:12px;">今日</span>' : ''}</div>
                 <div class="menu-history-dishes">${menu.dishes.join('、')} ${menu.deadline ? `· 截止${menu.deadline}` : ''}</div>
+                <div class="menu-history-actions">
+                    <button class="btn-edit" onclick="editMenu('${date}')">编辑</button>
+                    <button class="btn-delete" onclick="deleteMenu('${date}')">删除</button>
+                </div>
             </div>
         `;
     }).join('');
+}
+
+// 编辑菜单
+let editingDate = null;
+
+function editMenu(date) {
+    const menus = DB.getMenus();
+    const menu = menus[date];
+    if (!menu) return;
+
+    editingDate = date;
+    document.getElementById('edit-menu-date').value = formatDate(date);
+    document.getElementById('edit-menu-dishes').value = menu.dishes.join('\n');
+    document.getElementById('edit-menu-deadline').value = menu.deadline || '09:30';
+    document.getElementById('edit-menu-modal').style.display = 'flex';
+}
+
+function deleteMenu(date) {
+    showConfirm('删除菜单', `确定删除 ${formatDate(date)} 的菜单吗？`, () => {
+        const menus = DB.getMenus();
+        delete menus[date];
+        DB.saveMenus(menus);
+        showToast('已删除菜单');
+        renderMenuHistory();
+    });
+}
+
+function saveEditMenu() {
+    if (!editingDate) return;
+
+    const dishesRaw = document.getElementById('edit-menu-dishes').value.trim();
+    const deadline = document.getElementById('edit-menu-deadline').value;
+
+    if (!dishesRaw) { showToast('请输入菜品'); return; }
+
+    const dishes = dishesRaw.split('\n').map(d => d.trim()).filter(Boolean);
+    const menus = DB.getMenus();
+    menus[editingDate] = { dishes, deadline, updatedAt: new Date().toISOString() };
+    DB.saveMenus(menus);
+
+    showToast('✅ 菜单已更新');
+    document.getElementById('edit-menu-modal').style.display = 'none';
+    editingDate = null;
+    renderMenuHistory();
 }
 
 function renderTodayStats() {
