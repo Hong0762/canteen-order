@@ -118,8 +118,33 @@
         </div>
 
         <div class="section-card">
-            <h3>历史菜单</h3>
+            <h3>历史菜单管理</h3>
             <div id="menu-history-list"></div>
+        </div>
+
+        <!-- 编辑菜单弹窗 -->
+        <div id="edit-menu-modal" class="modal-overlay" style="display:none;">
+            <div class="modal-box">
+                <div class="modal-title">编辑菜单</div>
+                <div class="modal-body">
+                    <div class="form-row">
+                        <label>日期</label>
+                        <input type="text" id="edit-menu-date" readonly>
+                    </div>
+                    <div class="form-row">
+                        <label>菜品（每行一个）</label>
+                        <textarea id="edit-menu-dishes" rows="5"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <label>截止订餐时间</label>
+                        <input type="time" id="edit-menu-deadline">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" id="edit-menu-cancel">取消</button>
+                    <button class="btn-primary" id="edit-menu-save">保存</button>
+                </div>
+            </div>
         </div>
     </div>
 
