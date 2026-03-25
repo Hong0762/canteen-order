@@ -431,3 +431,12 @@ body {
     border: none;
     cursor: pointer;
 }
+
+/* 危险区域 */
+.danger-zone {
+    border: 1px solid #ffcccc;
+    background: #fff5f5;
+}
+.danger-zone h3 {
+    color: var(--danger);
+}
