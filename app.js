@@ -15,6 +15,8 @@ const DB = {
 // ============ 状态 ============
 let currentUser = null;
 let isAdmin = false;
+let selectedDate = null; // 用户选中的日期
+let currentWeekStart = null; // 当前显示周的起始日
 
 // ============ 工具函数 ============
 function today() { return new Date().toISOString().split('T')[0]; }
@@ -24,6 +26,28 @@ function formatDate(d) {
     return `${dt.getMonth()+1}月${dt.getDate()}日 ${['日','一','二','三','四','五','六'][dt.getDay()]}`;
 }
 function monthOf(d) { return d.slice(0, 7); }
+
+// 获取本周开始日期（周一）
+function getWeekStart(date) {
+    const dt = new Date(date + 'T00:00:00');
+    const day = dt.getDay(); // 0=周日,1=周一...
+    const diff = day === 0 ? -6 : 1 - day; // 调整到周一
+    dt.setDate(dt.getDate() + diff);
+    return dt.toISOString().split('T')[0];
+}
+
+// 日期加减天数
+function addDays(date, days) {
+    const dt = new Date(date + 'T00:00:00');
+    dt.setDate(dt.getDate() + days);
+    return dt.toISOString().split('T')[0];
+}
+
+// 格式化短日期
+function formatShortDate(d) {
+    const dt = new Date(d + 'T00:00:00');
+    return `${dt.getMonth()+1}/${dt.getDate()}`;
+}
 
 function showToast(msg, duration = 2000) {
     const t = document.getElementById('toast');
@@ -111,56 +135,120 @@ function doAdminLogin() {
 // ============ 员工页面 ============
 function renderUserPage() {
     document.getElementById('user-name-display').textContent = currentUser;
-    document.getElementById('today-date').textContent = formatDate(today());
-    renderTodayMenu();
+    // 初始化选中今天
+    selectedDate = today();
+    currentWeekStart = getWeekStart(today());
+    renderWeekCalendar();
+    renderSelectedDay();
     renderUserOrders();
+    setupWeekNavigation();
 }
 
-function renderTodayMenu() {
-    const menus = DB.getMenus();
-    const todayMenu = menus[today()];
-    const menuDisplay = document.getElementById('today-menu-display');
-    const actionArea = document.getElementById('order-action-area');
+function setupWeekNavigation() {
+    document.getElementById('prev-week').addEventListener('click', () => {
+        currentWeekStart = addDays(currentWeekStart, -7);
+        renderWeekCalendar();
+    });
+    document.getElementById('next-week').addEventListener('click', () => {
+        currentWeekStart = addDays(currentWeekStart, 7);
+        renderWeekCalendar();
+    });
+}
 
-    if (!todayMenu) {
-        menuDisplay.innerHTML = '<div class="menu-no-dish">今日菜单未发布</div>';
+function renderWeekCalendar() {
+    const weekEnd = addDays(currentWeekStart, 6);
+    document.getElementById('week-range').textContent = 
+        `${formatShortDate(currentWeekStart)} - ${formatShortDate(weekEnd)}`;
+
+    const calendarEl = document.getElementById('week-calendar');
+    const orders = DB.getOrders();
+    const todayStr = today();
+
+    let html = '';
+    for (let i = 0; i < 7; i++) {
+        const date = addDays(currentWeekStart, i);
+        const dt = new Date(date + 'T00:00:00');
+        const weekday = ['一', '二', '三', '四', '五', '六', '日'][i];
+        const isSelected = date === selectedDate;
+        const isOrdered = orders[date] && orders[date].includes(currentUser);
+        const isPast = date < todayStr;
+
+        let className = 'day-cell';
+        if (isSelected) className += ' selected';
+        if (isOrdered) className += ' ordered';
+        if (isPast) className += ' past';
+
+        html += `
+            <div class="${className}" data-date="${date}">
+                <div class="day-weekday">${weekday}</div>
+                <div class="day-date">${dt.getDate()}</div>
+                <div class="day-status">${isOrdered ? '已订' : ''}</div>
+            </div>
+        `;
+    }
+    calendarEl.innerHTML = html;
+
+    // 绑定点击事件
+    calendarEl.querySelectorAll('.day-cell').forEach(cell => {
+        cell.addEventListener('click', () => {
+            selectedDate = cell.dataset.date;
+            renderWeekCalendar();
+            renderSelectedDay();
+        });
+    });
+}
+
+function renderSelectedDay() {
+    const menus = DB.getMenus();
+    const orders = DB.getOrders();
+    const menuDisplay = document.getElementById('selected-menu-display');
+    const actionArea = document.getElementById('selected-order-area');
+
+    document.getElementById('selected-date').textContent = formatDate(selectedDate);
+
+    const menu = menus[selectedDate];
+    if (!menu) {
+        menuDisplay.innerHTML = '<div class="menu-no-dish">该日菜单未发布</div>';
         actionArea.innerHTML = '<div class="order-status-no-menu">等待管理员发布菜单</div>';
         return;
     }
 
     // 显示菜品
-    const dishes = todayMenu.dishes || [];
+    const dishes = menu.dishes || [];
     menuDisplay.innerHTML = dishes.map(d => `<div class="menu-dish">${d}</div>`).join('') +
-        (todayMenu.deadline ? `<div class="menu-deadline">截止订餐：${todayMenu.deadline}</div>` : '');
+        (menu.deadline ? `<div class="menu-deadline">截止订餐：${menu.deadline}</div>` : '');
 
-    // 判断是否已截止
-    const isClosed = todayMenu.deadline && now() > todayMenu.deadline;
+    // 判断是否已截止（今天之前的日期不能订，今天看截止时间）
+    const todayStr = today();
+    const isPast = selectedDate < todayStr;
+    const isToday = selectedDate === todayStr;
+    const isClosed = isToday && menu.deadline && now() > menu.deadline;
 
     // 判断是否已订餐
-    const orders = DB.getOrders();
-    const todayKey = today();
-    const hasOrdered = orders[todayKey] && orders[todayKey].includes(currentUser);
+    const hasOrdered = orders[selectedDate] && orders[selectedDate].includes(currentUser);
 
     if (hasOrdered) {
         actionArea.innerHTML = `
             <div class="order-btn-area">
                 <div class="order-status-ordered">✅ 已订餐</div>
-                ${!isClosed ? `<button class="btn-cancel-order" id="btn-cancel">取消订餐</button>` : ''}
+                ${!isPast && !isClosed ? `<button class="btn-cancel-order" id="btn-cancel">取消订餐</button>` : ''}
             </div>`;
-        if (!isClosed) {
+        if (!isPast && !isClosed) {
             document.getElementById('btn-cancel').addEventListener('click', () => {
-                showConfirm('取消订餐', `确定取消今日（${formatDate(today())}）的订餐吗？`, () => {
-                    cancelOrder(today());
+                showConfirm('取消订餐', `确定取消 ${formatDate(selectedDate)} 的订餐吗？`, () => {
+                    cancelOrder(selectedDate);
                 });
             });
         }
+    } else if (isPast) {
+        actionArea.innerHTML = '<div class="order-status-closed">📅 已过期</div>';
     } else if (isClosed) {
         actionArea.innerHTML = '<div class="order-status-closed">⏰ 今日订餐已截止</div>';
     } else {
         actionArea.innerHTML = '<button class="btn-order" id="btn-order">立即订餐 ¥5</button>';
         document.getElementById('btn-order').addEventListener('click', () => {
-            showConfirm('确认订餐', `确定订今日（${formatDate(today())}）午餐吗？费用 ¥5.00`, () => {
-                placeOrder(today());
+            showConfirm('确认订餐', `确定订 ${formatDate(selectedDate)} 午餐吗？费用 ¥5.00`, () => {
+                placeOrder(selectedDate);
             });
         });
     }
@@ -173,7 +261,8 @@ function placeOrder(date) {
         orders[date].push(currentUser);
         DB.saveOrders(orders);
         showToast('✅ 订餐成功！');
-        renderTodayMenu();
+        renderWeekCalendar();
+        renderSelectedDay();
         renderUserOrders();
     }
 }
@@ -184,7 +273,8 @@ function cancelOrder(date) {
         orders[date] = orders[date].filter(n => n !== currentUser);
         DB.saveOrders(orders);
         showToast('已取消订餐');
-        renderTodayMenu();
+        renderWeekCalendar();
+        renderSelectedDay();
         renderUserOrders();
     }
 }
