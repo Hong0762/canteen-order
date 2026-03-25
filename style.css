@@ -208,6 +208,61 @@ body {
 .section-header h3 { font-size: 15px; font-weight: 600; }
 .month-total { font-size: 14px; color: var(--danger); font-weight: 600; }
 
+/* 周历 */
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    font-size: 15px;
+    font-weight: 600;
+}
+.btn-icon {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--text-sub);
+    cursor: pointer;
+    padding: 0 10px;
+    -webkit-tap-highlight-color: transparent;
+}
+.week-calendar {
+    display: flex;
+    gap: 6px;
+}
+.day-cell {
+    flex: 1;
+    text-align: center;
+    padding: 10px 4px;
+    border-radius: 10px;
+    background: #f5f5f5;
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.day-cell:hover { background: #e8f5e9; }
+.day-cell.selected {
+    background: var(--primary);
+    color: #fff;
+}
+.day-cell.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.day-cell.past { opacity: 0.4; }
+.day-cell.ordered {
+    background: #e8f5e9;
+    color: var(--primary);
+    font-weight: 600;
+}
+.day-cell.ordered.selected {
+    background: var(--primary);
+    color: #fff;
+}
+.day-weekday { font-size: 11px; margin-bottom: 4px; }
+.day-date { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+.day-status { font-size: 10px; }
+
 /* 订单列表 */
 .order-list { }
 .order-item {
