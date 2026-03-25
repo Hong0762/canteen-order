@@ -2,10 +2,40 @@
 const PRICE = 5;
 const ADMIN_PWD = '888888'; // 默认管理员密码
 
-// ============ 数据存储 ============
+// ============ 数据存储（兼容 localStorage 不可用的情况）===========
+const memoryStorage = {};
+let storageAvailable = false;
+
+try {
+    const testKey = '__test__';
+    localStorage.setItem(testKey, '1');
+    localStorage.removeItem(testKey);
+    storageAvailable = true;
+} catch (e) {
+    console.warn('localStorage 不可用，使用内存存储');
+}
+
 const DB = {
-    get: (key) => { try { return JSON.parse(localStorage.getItem('co_' + key)) || null; } catch(e) { return null; } },
-    set: (key, val) => localStorage.setItem('co_' + key, JSON.stringify(val)),
+    get: (key) => {
+        try {
+            if (storageAvailable) {
+                return JSON.parse(localStorage.getItem('co_' + key)) || null;
+            }
+            return memoryStorage['co_' + key] || null;
+        } catch(e) { return null; }
+    },
+    set: (key, val) => {
+        try {
+            if (storageAvailable) {
+                localStorage.setItem('co_' + key, JSON.stringify(val));
+            } else {
+                memoryStorage['co_' + key] = JSON.parse(JSON.stringify(val));
+            }
+        } catch(e) {
+            // 存储失败时显示提示
+            showToast('存储失败，请检查浏览器设置');
+        }
+    },
     getMenus: () => DB.get('menus') || {},
     getOrders: () => DB.get('orders') || {},
     saveMenus: (v) => DB.set('menus', v),
