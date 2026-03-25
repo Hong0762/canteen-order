@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>食堂订餐系统</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div id="page-login" class="page-full active">
+    <div class="login-wrap">
+        <div class="login-logo">🍱</div>
+        <h1 class="login-title">食堂订餐系统</h1>
+        <p class="login-sub">请输入您的姓名登录</p>
+        <div class="login-form">
+            <input type="text" id="login-name" placeholder="请输入姓名" maxlength="10">
+            <button class="btn-primary btn-block" id="btn-login">进入系统</button>
+        </div>
+        <button class="btn-text" id="btn-admin-entry">管理员入口</button>
+    </div>
+</div>
+
+<!-- 管理员登录 -->
+<div id="page-admin-login" class="page-full">
+    <div class="login-wrap">
+        <div class="login-logo">🔑</div>
+        <h1 class="login-title">管理员登录</h1>
+        <div class="login-form">
+            <input type="password" id="admin-pwd" placeholder="请输入管理员密码">
+            <button class="btn-primary btn-block" id="btn-admin-login">登录</button>
+        </div>
+        <button class="btn-text" id="btn-back-login">← 返回</button>
+    </div>
+</div>
+
+<!-- 员工主页 -->
+<div id="page-user" class="page-full">
+    <header class="app-header">
+        <div class="header-left">
+            <span class="header-avatar">🍱</span>
+            <span id="user-name-display">姓名</span>
+        </div>
+        <button class="btn-logout" id="btn-logout">退出</button>
+    </header>
+
+    <div class="page-content">
+        <!-- 今日订餐卡片 -->
+        <div class="today-card">
+            <div class="today-date" id="today-date"></div>
+            <div class="today-label">今日午餐</div>
+            <div class="today-price">¥5.00 / 份</div>
+            <div class="today-menu" id="today-menu-display">
+                <span class="menu-loading">加载中...</span>
+            </div>
+            <div id="order-action-area"></div>
+        </div>
+
+        <!-- 本月订餐记录 -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3>本月订餐记录</h3>
+                <span id="user-month-total" class="month-total"></span>
+            </div>
+            <div id="user-order-list" class="order-list">
+                <div class="empty-tip">暂无记录</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 管理员主页 -->
+<div id="page-admin" class="page-full">
+    <header class="app-header admin-header">
+        <div class="header-left">
+            <span class="header-avatar">👨‍💼</span>
+            <span>管理员</span>
+        </div>
+        <button class="btn-logout" id="btn-admin-logout">退出</button>
+    </header>
+
+    <!-- 管理员 Tab -->
+    <div class="admin-tabs">
+        <div class="admin-tab active" data-tab="menu">菜单管理</div>
+        <div class="admin-tab" data-tab="today">今日统计</div>
+        <div class="admin-tab" data-tab="monthly">月度结算</div>
+    </div>
+
+    <!-- 菜单管理 -->
+    <div id="admin-tab-menu" class="admin-tab-content active">
+        <div class="section-card">
+            <h3>发布今日菜单</h3>
+            <div class="form-row">
+                <label>日期</label>
+                <input type="date" id="menu-date">
+            </div>
+            <div class="form-row">
+                <label>菜品（每行一个）</label>
+                <textarea id="menu-dishes" rows="5" placeholder="例如：&#10;红烧肉&#10;清炒时蔬&#10;番茄蛋汤&#10;米饭"></textarea>
+            </div>
+            <div class="form-row">
+                <label>截止订餐时间</label>
+                <input type="time" id="menu-deadline" value="09:30">
+            </div>
+            <button class="btn-primary btn-block" id="btn-publish-menu">发布菜单</button>
+        </div>
+
+        <div class="section-card">
+            <h3>历史菜单</h3>
+            <div id="menu-history-list"></div>
+        </div>
+    </div>
+
+    <!-- 今日统计 -->
+    <div id="admin-tab-today" class="admin-tab-content">
+        <div class="section-card">
+            <div class="stat-row">
+                <div class="stat-item">
+                    <div class="stat-num" id="stat-today-count">0</div>
+                    <div class="stat-label">今日订餐人数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num red" id="stat-today-amount">¥0</div>
+                    <div class="stat-label">今日金额</div>
+                </div>
+            </div>
+        </div>
+        <div class="section-card">
+            <div class="section-header">
+                <h3>今日订餐名单</h3>
+                <button class="btn-small btn-primary" id="btn-export-today">导出</button>
+            </div>
+            <div id="today-order-list"></div>
+        </div>
+    </div>
+
+    <!-- 月度结算 -->
+    <div id="admin-tab-monthly" class="admin-tab-content">
+        <div class="section-card">
+            <div class="form-row-inline">
+                <select id="settle-month"></select>
+                <button class="btn-primary btn-small" id="btn-export-monthly">导出Excel</button>
+            </div>
+        </div>
+        <div class="section-card">
+            <div class="section-header">
+                <h3>月度汇总</h3>
+                <span id="monthly-total-display" class="month-total"></span>
+            </div>
+            <div id="monthly-list"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- 确认弹窗 -->
+<div id="confirm-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-title" id="confirm-title">确认操作</div>
+        <div class="modal-body" id="confirm-body"></div>
+        <div class="modal-actions">
+            <button class="btn-secondary" id="confirm-cancel">取消</button>
+            <button class="btn-primary" id="confirm-ok">确认</button>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
