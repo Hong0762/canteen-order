@@ -47,21 +47,31 @@
     </header>
 
     <div class="page-content">
-        <!-- 今日订餐卡片 -->
-        <div class="today-card">
-            <div class="today-date" id="today-date"></div>
-            <div class="today-label">今日午餐</div>
-            <div class="today-price">¥5.00 / 份</div>
-            <div class="today-menu" id="today-menu-display">
-                <span class="menu-loading">加载中...</span>
+        <!-- 周历订餐 -->
+        <div class="section-card">
+            <div class="calendar-header">
+                <button class="btn-icon" id="prev-week">‹</button>
+                <span id="week-range"></span>
+                <button class="btn-icon" id="next-week">›</button>
             </div>
-            <div id="order-action-area"></div>
+            <div class="week-calendar" id="week-calendar"></div>
+        </div>
+
+        <!-- 选中日期的菜单和订餐 -->
+        <div class="today-card" id="selected-day-card">
+            <div class="today-date" id="selected-date"></div>
+            <div class="today-label">午餐</div>
+            <div class="today-price">¥5.00 / 份</div>
+            <div class="today-menu" id="selected-menu-display">
+                <span class="menu-loading">选择日期查看菜单</span>
+            </div>
+            <div id="selected-order-area"></div>
         </div>
 
         <!-- 本月订餐记录 -->
         <div class="section-card">
             <div class="section-header">
-                <h3>本月订餐记录</h3>
+                <h3>我的订餐记录</h3>
                 <span id="user-month-total" class="month-total"></span>
             </div>
             <div id="user-order-list" class="order-list">
